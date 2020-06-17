@@ -113,6 +113,7 @@ fuse_gmock_files.py  generator  gmock-config.in  gmock_doctor.py  upload_gmock.p
 [ec2-user@ip-172-31-47-1 scripts]$ pwd
 /home/ec2-user/charles/googletest/googlemock/scripts
 - gmock-gtest-all.cc 에  gtest / gmock 모두 모아둔 것이라고함.  이것을 libgtest.a 로 만들어 build.sh 를 만들면 된다.
+- fuse를 이용하여 하나로 모은다. gmock-gtest-all.cc
 
 - g++ ./googletest/googlemock/src/gmock_main.cc -c -I
 - ar rcv libgtest.a gmock-gtest-all.o gmock_main.o
@@ -126,5 +127,45 @@ fuse_gmock_files.py  generator  gmock-config.in  gmock_doctor.py  upload_gmock.p
         - 함수 인자와 한정자는 ( ) 로 묶어야 한다.
     - MOCK_METHOD(void , Write , (Level level, const std::string& msg) , (override));
 
-- 
-    - 
+## 3일차
+- MOCK은 실제 함수의 구현을 호출하지 않는다. 
+    - 함수에 대해서 호출된 사실만 기록할 뿐이다. 그래서 private 함수도 mocking할수 있다.
+- 사용하는 mock만 MOCKING하고 , 나머지는 그냥 사용하겠다고하면
+    - using Foo::Add;를 넣으면 된다. 16*_3.cpp
+        - 부모 클래스에서 기본 구현이 되었을 경우에만 사용 가능
+
+- template mocking  16*_4.cpp
+
+- template을 기반으로 작성될때, 함수에 대한 구현이 존재해야만 소스도 존재
+    - template은 상속으로 만들지 않는다.  함수가 암묵적으로 약속되어있다고 가정하므로 , 바로 기능을 구현한다.
+    
+- ON_CALL
+    - mock에 대한 함수의 호출을 다른 객체에게 위임하거나, 결가를 고정할수 있는 매크로
+    - ON_CALL(*this, Add).WillByDefault([this](int a ,int b){
+            return fake.Add(a,b);       // fake 는 실제로 수행되어 값을 확인하기 위해서 (DB에서는 모든 것을 만들수 없으니...)
+      });
+
+- Hamcrest style은 EXPECT_THAT을 사용하며 , 뒤에 Matcher들을 그대로 사용할수 있다.
+    - MatchesRegex 라는 정규 표현식도 제공
+
+- Field & Property
+    - Field : 멤버 변수   ::testing::Field
+    - Property : Accessor Method (접근자 메소드) - Getter / Setter     ::testing::Property
+    - EXPECT_THAT(user , Field(&User::age,Eq(42)));    <= EXPECT)EQ(user.age , 42);
+
+- **Matching Containers**
+
+- EXPECT_CALL은 순서를 체크하지 않는다.
+    - 호출 순서를 검증하고 싶다.
+        - InSequence 객체만 생성하면 호출 순서까지 check한다.
+        - using ::testing::InSequence;
+
+
+### 추가적으로 풀어본 문제로 소스가 이전과 이후가 변경된 파일
+- \_3로 복사해서 만드네요.    11*_3.cpp
+    - NiceMock
+- 12*_3.cpp
+    - throw
+- 13*_2.cpp
+    - fake
+    
